@@ -11,17 +11,22 @@ the caller to remember the syntax.
 
 ## What it does
 
-The server exposes three MCP tools:
+The server exposes four MCP tools:
 
 - **`commit`** — commits the currently staged changes in a Git repository
   using a RACN-formatted message (`"<risk> <intention> <comment>"`, e.g.
-  `. r Extract method`). It does **not** stage changes for you; run `git add`
-  first. Optionally pass `theme_slug` and `theme_mode` to group several
+  `. r Extract method`). By default it does **not** stage changes for you;
+  run `git add` first, or pass `paths` to have `commit` stage those paths
+  (or everything, for an empty list or `["."]`) atomically as part of the
+  same call. Optionally pass `theme_slug` and `theme_mode` to group several
   commits under a feature theme — see [Grouping commits under a feature
   theme](#grouping-commits-under-a-feature-theme) below.
 - **`close_theme`** — merges a `d_shaped_merge` theme's branch back into a
   target branch, non-fast-forward, with the theme's slug as the merge
   commit's message.
+- **`git_status`** — returns `git status --porcelain` output, read-only, so
+  a caller can see staged/unstaged/untracked changes without any other git
+  or terminal access.
 - **`notation_reference`** — returns the full list of valid risk levels and
   intentions (including project Extension Intentions), for a client to look
   up before calling `commit`.
@@ -40,6 +45,7 @@ descriptions, and input/output schemas) is captured in
 | `comment`    | The commit summary text.                                                      |
 | `theme_slug` | Optional feature theme slug (lowercase, hyphenated, e.g. `checkout-redesign`) grouping this commit with others. Must be given together with `theme_mode`. |
 | `theme_mode` | Optional; either `inline` or `d_shaped_merge`. Required together with `theme_slug`. |
+| `paths`      | Optional list of paths (relative to `location`) to stage before committing. An empty list or `["."]` stages everything. Paths must resolve inside `location`; anything escaping it via `..`, an absolute path, or a symlink is rejected. |
 
 `risk` and `intention` are named values rather than the raw RACN symbols so
 a caller doesn't have to memorize single-character codes; the server
