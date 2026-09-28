@@ -1,9 +1,10 @@
+import os
 import subprocess
 from pathlib import Path
 
 import pytest
 
-from racn_mcp.git_commit import CommitError, close_theme, commit
+from racn_mcp.git_commit import CommitError, close_theme, commit, git_status
 
 
 def _git(repo: Path, *args: str) -> None:
@@ -209,3 +210,120 @@ def test_close_theme_raises_for_invalid_location():
         close_theme(
             location="/does/not/exist", slug="checkout-redesign", target_branch="main"
         )
+
+
+def test_commit_with_paths_stages_and_commits_without_prior_add(repo: Path):
+    (repo / "a.txt").write_text("hello")
+    (repo / "b.txt").write_text("world")
+
+    result = commit(
+        location=str(repo),
+        intention="r",
+        risk=".",
+        comment="Add a.txt only",
+        paths=["a.txt"],
+    )
+
+    assert result.message == ". r Add a.txt only"
+    status = git_status(str(repo))
+    assert "?? b.txt" in status
+    assert "a.txt" not in status
+
+
+def test_commit_with_empty_paths_stages_everything(repo: Path):
+    (repo / "a.txt").write_text("hello")
+    (repo / "b.txt").write_text("world")
+
+    commit(location=str(repo), intention="r", risk=".", comment="Add both", paths=[])
+
+    assert git_status(str(repo)) == ""
+
+
+def test_commit_with_paths_dot_stages_everything(repo: Path):
+    (repo / "a.txt").write_text("hello")
+
+    commit(location=str(repo), intention="r", risk=".", comment="Add a.txt", paths=["."])
+
+    assert git_status(str(repo)) == ""
+
+
+def test_commit_without_paths_preserves_existing_staged_only_behavior(repo: Path):
+    (repo / "a.txt").write_text("hello")
+    (repo / "b.txt").write_text("world")
+    _git(repo, "add", "a.txt")
+
+    commit(location=str(repo), intention="r", risk=".", comment="Add a.txt")
+
+    status = git_status(str(repo))
+    assert "?? b.txt" in status
+
+
+def test_commit_rejects_paths_escaping_repo_via_dotdot(repo: Path, tmp_path: Path):
+    # `repo` and `tmp_path` are the same directory, so an "outside" path must
+    # be a sibling of it, not something created underneath it.
+    outside = tmp_path.parent / f"{tmp_path.name}_outside.txt"
+    outside.write_text("secret")
+    try:
+        with pytest.raises(CommitError, match="escapes repository root"):
+            commit(
+                location=str(repo),
+                intention="r",
+                risk=".",
+                comment="x",
+                paths=[f"../{outside.name}"],
+            )
+    finally:
+        outside.unlink(missing_ok=True)
+
+
+def test_commit_rejects_absolute_paths_outside_repo(repo: Path, tmp_path: Path):
+    outside_dir = tmp_path.parent / f"{tmp_path.name}_outside_repo"
+    outside_dir.mkdir()
+    outside_file = outside_dir / "outside.txt"
+    outside_file.write_text("secret")
+
+    with pytest.raises(CommitError, match="escapes repository root"):
+        commit(
+            location=str(repo),
+            intention="r",
+            risk=".",
+            comment="x",
+            paths=[str(outside_file)],
+        )
+
+
+def test_commit_rejects_symlink_pointing_outside_repo(repo: Path, tmp_path: Path):
+    outside_dir = tmp_path.parent / f"{tmp_path.name}_outside_repo"
+    outside_dir.mkdir()
+    (outside_dir / "outside.txt").write_text("secret")
+    link = repo / "link_to_outside"
+    try:
+        os.symlink(outside_dir, link, target_is_directory=True)
+    except OSError:
+        pytest.skip("Creating symlinks is not permitted in this environment")
+
+    with pytest.raises(CommitError, match="escapes repository root"):
+        commit(
+            location=str(repo),
+            intention="r",
+            risk=".",
+            comment="x",
+            paths=["link_to_outside/outside.txt"],
+        )
+
+
+def test_git_status_shows_untracked_and_staged_changes(repo: Path):
+    (repo / "a.txt").write_text("hello")
+    (repo / "b.txt").write_text("world")
+    _git(repo, "add", "a.txt")
+
+    status = git_status(str(repo))
+
+    assert "A  a.txt" in status
+    assert "?? b.txt" in status
+
+
+def test_git_status_raises_for_invalid_location():
+    with pytest.raises(CommitError, match="does not exist"):
+        git_status("/does/not/exist")
+

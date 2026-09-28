@@ -32,10 +32,13 @@ def commit(
     comment: str,
     theme_slug: str | None = None,
     theme_mode: ThemeMode | None = None,
+    paths: list[str] | None = None,
 ) -> CommitResult:
     """Commit currently-staged changes in `location` using the given notation.
 
-    Assumes the caller has already staged (`git add`) whatever should be committed.
+    By default assumes the caller has already staged (`git add`) whatever
+    should be committed. Pass `paths` to stage those paths (or everything,
+    for an empty list or `["."]`) atomically as part of this call instead.
 
     `theme_slug` and `theme_mode` must be given together (or not at all) to
     group this commit under a feature theme. In "inline" mode the slug is
@@ -66,6 +69,9 @@ def commit(
         raise CommitError(str(e)) from e
 
     _run_git(repo_path, ["rev-parse", "--is-inside-work-tree"])
+
+    if paths is not None:
+        _stage(repo_path, paths)
 
     staged = _run_git(repo_path, ["diff", "--cached", "--name-only"]).stdout.strip()
     if not staged:
@@ -108,6 +114,39 @@ def close_theme(location: str, slug: str, target_branch: str) -> CommitResult:
     commit_hash = _run_git(repo_path, ["rev-parse", "HEAD"]).stdout.strip()
 
     return CommitResult(commit_hash=commit_hash, message=slug)
+
+
+def git_status(location: str) -> str:
+    """Return `git status --porcelain` output for the repository at `location`."""
+    repo_path = Path(location)
+    if not repo_path.is_dir():
+        raise CommitError(f"Location does not exist or is not a directory: {location}")
+
+    _run_git(repo_path, ["rev-parse", "--is-inside-work-tree"])
+    return _run_git(repo_path, ["status", "--porcelain"]).stdout
+
+
+def _stage(repo_path: Path, paths: list[str]) -> None:
+    """Stage `paths` (or everything, for an empty list or `["."]`) in `repo_path`."""
+    if not paths or paths == ["."]:
+        _run_git(repo_path, ["add", "-A"])
+        return
+
+    safe_paths = _validate_paths(repo_path, paths)
+    _run_git(repo_path, ["add", "--", *safe_paths])
+
+
+def _validate_paths(repo_path: Path, paths: list[str]) -> list[str]:
+    """Reject paths that escape `repo_path` via `..`, absolute paths, or symlinks."""
+    repo_root = repo_path.resolve()
+    for path in paths:
+        candidate = Path(path)
+        if not candidate.is_absolute():
+            candidate = repo_path / candidate
+        resolved = candidate.resolve()
+        if resolved != repo_root and repo_root not in resolved.parents:
+            raise CommitError(f"Path {path!r} escapes repository root {repo_root}")
+    return paths
 
 
 def _branch_exists(repo_path: Path, branch: str) -> bool:
