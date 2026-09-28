@@ -1,4 +1,4 @@
-"""MCP server exposing a `commit` tool for Arlo's Risk-Aware Commit Notation."""
+"""MCP server exposing `commit`, `close_theme`, `git_status`, and `notation_reference` tools for Arlo's Risk-Aware Commit Notation."""
 
 from __future__ import annotations
 
@@ -27,14 +27,22 @@ mcp = MCPServer(
         "Commits changes to a Git repository using Arlo's Risk-Aware Commit "
         "Notation (RACN). RACN messages take the form "
         '"<risk> <intention> <comment>", encoding how risky a change is and '
-        "what the author intended alongside the summary. Call "
-        "`notation_reference` to look up the valid risk levels and intentions "
-        "(including Extension Intentions) before classifying a change, then "
-        "call `commit` with the classification. `commit` assumes changes are "
-        "already staged (`git add`) unless you pass it `paths`, which stages "
-        "exactly those paths (or everything, for an empty list) atomically "
-        "before committing. Call `git_status` to see staged/unstaged/untracked "
-        "changes at any time. This tool is "
+        "what the author intended alongside the summary. This server exposes "
+        "exactly four tools: `commit`, `close_theme`, `git_status`, and "
+        "`notation_reference` \u2014 there is no separate `stage`, `add`, or "
+        "`commit_files` tool; if a call to one of those fails with a "
+        "'tool not found' style error, that name doesn't exist, it isn't a "
+        "sign the client needs a reload. Call `notation_reference` to look up "
+        "the valid risk levels and intentions (including Extension "
+        "Intentions) before classifying a change, then call `commit` with "
+        "the classification. `commit` assumes changes are already staged "
+        "(`git add`) unless you pass it `paths`, which stages exactly those "
+        "paths (or everything, for an empty list) atomically before "
+        "committing \u2014 this `paths` parameter is the only staging "
+        "mechanism this server provides, there is no standalone staging "
+        "tool. Call `git_status` (read-only, makes no changes) to see "
+        "staged/unstaged/untracked changes at any time, e.g. before deciding "
+        "what to pass as `paths`. This tool is "
         "intended to be used with very small, focused commits: stage and "
         "commit one distinct concern at a time rather than batching several "
         "into one call. Skipping small commits in favor of large ones "
@@ -67,7 +75,9 @@ def commit(
     or `["."]` stages everything) atomically as part of this same call,
     instead of staging separately first. Paths must resolve inside
     `location`; anything escaping it via `..`, an absolute path, or a
-    symlink is rejected.
+    symlink is rejected. There is no separate `stage`/`commit_files` tool —
+    this `paths` parameter is the only staging mechanism this server
+    provides.
 
     Pass `theme_slug` and `theme_mode` together to group this commit with
     others under a feature theme (a lowercase, hyphenated slug, e.g.

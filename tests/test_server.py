@@ -209,3 +209,9 @@ def test_server_instructions_explain_racn_usage():
 def test_server_instructions_call_for_small_commits():
     assert "small" in mcp.instructions
     assert "less clear commit history" in mcp.instructions
+
+
+def test_server_instructions_clarify_no_separate_staging_tool():
+    assert "there is no separate `stage`, `add`, or `commit_files` tool" in mcp.instructions
+    assert "`paths` parameter is the only staging mechanism" in mcp.instructions
+
