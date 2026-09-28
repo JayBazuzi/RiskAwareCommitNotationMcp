@@ -212,6 +212,8 @@ def test_server_instructions_call_for_small_commits():
 
 
 def test_server_instructions_clarify_no_separate_staging_tool():
-    assert "there is no separate `stage`, `add`, or `commit_files` tool" in mcp.instructions
+    assert (
+        "there is no separate `stage`, `add`, or `commit_files` tool"
+        in mcp.instructions
+    )
     assert "`paths` parameter is the only staging mechanism" in mcp.instructions
-

@@ -242,7 +242,9 @@ def test_commit_with_empty_paths_stages_everything(repo: Path):
 def test_commit_with_paths_dot_stages_everything(repo: Path):
     (repo / "a.txt").write_text("hello")
 
-    commit(location=str(repo), intention="r", risk=".", comment="Add a.txt", paths=["."])
+    commit(
+        location=str(repo), intention="r", risk=".", comment="Add a.txt", paths=["."]
+    )
 
     assert git_status(str(repo)) == ""
 
@@ -326,4 +328,3 @@ def test_git_status_shows_untracked_and_staged_changes(repo: Path):
 def test_git_status_raises_for_invalid_location():
     with pytest.raises(CommitError, match="does not exist"):
         git_status("/does/not/exist")
-
