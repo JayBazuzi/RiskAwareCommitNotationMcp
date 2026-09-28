@@ -7,6 +7,7 @@ from mcp.server.mcpserver import MCPServer
 from racn_mcp.git_commit import CommitError
 from racn_mcp.git_commit import close_theme as do_close_theme
 from racn_mcp.git_commit import commit as do_commit
+from racn_mcp.git_commit import git_status as do_git_status
 from racn_mcp.notation import (
     INTENTION_NAMES,
     INTENTIONS,
@@ -29,8 +30,11 @@ mcp = MCPServer(
         "what the author intended alongside the summary. Call "
         "`notation_reference` to look up the valid risk levels and intentions "
         "(including Extension Intentions) before classifying a change, then "
-        "call `commit` with the classification. Stage changes with `git add` "
-        "first; this server does not stage them for you. This tool is "
+        "call `commit` with the classification. `commit` assumes changes are "
+        "already staged (`git add`) unless you pass it `paths`, which stages "
+        "exactly those paths (or everything, for an empty list) atomically "
+        "before committing. Call `git_status` to see staged/unstaged/untracked "
+        "changes at any time. This tool is "
         "intended to be used with very small, focused commits: stage and "
         "commit one distinct concern at a time rather than batching several "
         "into one call. Skipping small commits in favor of large ones "
@@ -50,13 +54,20 @@ def commit(
     comment: str,
     theme_slug: str | None = None,
     theme_mode: ThemeMode | None = None,
+    paths: list[str] | None = None,
 ) -> str:
-    """Commit staged changes in a Git repository using Arlo's Risk-Aware Commit Notation.
+    """Commit changes in a Git repository using Arlo's Risk-Aware Commit Notation.
 
     The resulting commit message has the form "<risk> <intention> <comment>",
     e.g. ". test_only Add approval test". Call `notation_reference` first to
     see the full list of intentions and risk levels and what each means.
-    Assumes changes are already staged (`git add`) at `location`.
+
+    By default assumes changes are already staged (`git add`) at `location`.
+    Pass `paths` to stage those paths (relative to `location`; an empty list
+    or `["."]` stages everything) atomically as part of this same call,
+    instead of staging separately first. Paths must resolve inside
+    `location`; anything escaping it via `..`, an absolute path, or a
+    symlink is rejected.
 
     Pass `theme_slug` and `theme_mode` together to group this commit with
     others under a feature theme (a lowercase, hyphenated slug, e.g.
@@ -77,6 +88,7 @@ def commit(
         comment: The commit summary text.
         theme_slug: Feature theme slug to group this commit under, if any.
         theme_mode: How to group commits under `theme_slug`: "inline" or "d_shaped_merge".
+        paths: Paths to stage before committing, if not already staged.
     """
     try:
         symbolic_risk = resolve_risk_name(risk)
@@ -88,6 +100,7 @@ def commit(
             comment=comment,
             theme_slug=theme_slug,
             theme_mode=theme_mode,
+            paths=paths,
         )
     except (NotationError, CommitError) as e:
         raise ValueError(str(e)) from e
@@ -117,6 +130,23 @@ def close_theme(location: str, slug: str, target_branch: str) -> str:
         raise ValueError(str(e)) from e
 
     return f"Merged theme {slug!r} into {target_branch} as {result.commit_hash[:12]}"
+
+
+@mcp.tool()
+def git_status(location: str) -> str:
+    """Show staged, unstaged, and untracked changes (`git status --porcelain`).
+
+    Read-only: makes no changes. Useful for deciding what to pass as `paths`
+    to `commit`, or for confirming what's staged/pending without needing any
+    other git or terminal access.
+
+    Args:
+        location: Path to the Git repository (or a directory inside it).
+    """
+    try:
+        return do_git_status(location)
+    except CommitError as e:
+        raise ValueError(str(e)) from e
 
 
 @mcp.tool()

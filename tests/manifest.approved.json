@@ -1,6 +1,6 @@
 [
     {
-        "description": "Commit staged changes in a Git repository using Arlo's Risk-Aware Commit Notation.\n\nThe resulting commit message has the form \"<risk> <intention> <comment>\",\ne.g. \". test_only Add approval test\". Call `notation_reference` first to\nsee the full list of intentions and risk levels and what each means.\nAssumes changes are already staged (`git add`) at `location`.\n\nPass `theme_slug` and `theme_mode` together to group this commit with\nothers under a feature theme (a lowercase, hyphenated slug, e.g.\n\"checkout-redesign\"):\n\n- `theme_mode=\"inline\"`: the slug is embedded in this commit's message,\n  e.g. \". f [checkout-redesign] Add validation\".\n- `theme_mode=\"d_shaped_merge\"`: this commit is made on a branch named\n  after the slug (created from the current HEAD the first time it's\n  used) instead of the current branch. Call `close_theme` afterwards to\n  merge that branch back with `slug` as the merge commit's message,\n  forming a \"D\" shape in the history.\n\nArgs:\n    location: Path to the Git repository (or a directory inside it).\n    intention: The author's intention for the change, e.g. \"feature\" or \"test_only\".\n    risk: How risky the change is, e.g. \"proven_safe\" or \"risky\".\n    comment: The commit summary text.\n    theme_slug: Feature theme slug to group this commit under, if any.\n    theme_mode: How to group commits under `theme_slug`: \"inline\" or \"d_shaped_merge\".\n",
+        "description": "Commit changes in a Git repository using Arlo's Risk-Aware Commit Notation.\n\nThe resulting commit message has the form \"<risk> <intention> <comment>\",\ne.g. \". test_only Add approval test\". Call `notation_reference` first to\nsee the full list of intentions and risk levels and what each means.\n\nBy default assumes changes are already staged (`git add`) at `location`.\nPass `paths` to stage those paths (relative to `location`; an empty list\nor `[\".\"]` stages everything) atomically as part of this same call,\ninstead of staging separately first. Paths must resolve inside\n`location`; anything escaping it via `..`, an absolute path, or a\nsymlink is rejected.\n\nPass `theme_slug` and `theme_mode` together to group this commit with\nothers under a feature theme (a lowercase, hyphenated slug, e.g.\n\"checkout-redesign\"):\n\n- `theme_mode=\"inline\"`: the slug is embedded in this commit's message,\n  e.g. \". f [checkout-redesign] Add validation\".\n- `theme_mode=\"d_shaped_merge\"`: this commit is made on a branch named\n  after the slug (created from the current HEAD the first time it's\n  used) instead of the current branch. Call `close_theme` afterwards to\n  merge that branch back with `slug` as the merge commit's message,\n  forming a \"D\" shape in the history.\n\nArgs:\n    location: Path to the Git repository (or a directory inside it).\n    intention: The author's intention for the change, e.g. \"feature\" or \"test_only\".\n    risk: How risky the change is, e.g. \"proven_safe\" or \"risky\".\n    comment: The commit summary text.\n    theme_slug: Feature theme slug to group this commit under, if any.\n    theme_mode: How to group commits under `theme_slug`: \"inline\" or \"d_shaped_merge\".\n    paths: Paths to stage before committing, if not already staged.\n",
         "input_schema": {
             "properties": {
                 "comment": {
@@ -40,6 +40,21 @@
                 "location": {
                     "title": "Location",
                     "type": "string"
+                },
+                "paths": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Paths"
                 },
                 "risk": {
                     "enum": [
@@ -141,6 +156,36 @@
                 "result"
             ],
             "title": "close_themeOutput",
+            "type": "object"
+        }
+    },
+    {
+        "description": "Show staged, unstaged, and untracked changes (`git status --porcelain`).\n\nRead-only: makes no changes. Useful for deciding what to pass as `paths`\nto `commit`, or for confirming what's staged/pending without needing any\nother git or terminal access.\n\nArgs:\n    location: Path to the Git repository (or a directory inside it).\n",
+        "input_schema": {
+            "properties": {
+                "location": {
+                    "title": "Location",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "location"
+            ],
+            "title": "git_statusArguments",
+            "type": "object"
+        },
+        "name": "git_status",
+        "output_schema": {
+            "properties": {
+                "result": {
+                    "title": "Result",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "result"
+            ],
+            "title": "git_statusOutput",
             "type": "object"
         }
     },

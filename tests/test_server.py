@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from racn_mcp.server import close_theme, commit, mcp, notation_reference
+from racn_mcp.server import close_theme, commit, git_status, mcp, notation_reference
 
 
 def _git(repo: Path, *args: str) -> None:
@@ -53,6 +53,35 @@ def test_commit_tool_raises_value_error_when_nothing_staged(repo: Path):
     with pytest.raises(ValueError, match="No staged changes"):
         commit(
             location=str(repo), intention="refactoring", risk="proven_safe", comment="x"
+        )
+
+
+def test_commit_tool_stages_given_paths(repo: Path):
+    (repo / "a.txt").write_text("hello")
+    (repo / "b.txt").write_text("world")
+
+    result = commit(
+        location=str(repo),
+        intention="refactoring",
+        risk="proven_safe",
+        comment="Add a.txt only",
+        paths=["a.txt"],
+    )
+
+    assert result.endswith(". r Add a.txt only")
+    assert "?? b.txt" in git_status(str(repo))
+
+
+def test_commit_tool_raises_value_error_for_path_escaping_repo(repo: Path):
+    (repo / "a.txt").write_text("hello")
+
+    with pytest.raises(ValueError, match="escapes repository root"):
+        commit(
+            location=str(repo),
+            intention="refactoring",
+            risk="proven_safe",
+            comment="x",
+            paths=["../outside.txt"],
         )
 
 
@@ -143,6 +172,22 @@ def test_close_theme_tool_raises_value_error_when_branch_missing(repo: Path):
         close_theme(
             location=str(repo), slug="nonexistent-theme", target_branch="master"
         )
+
+
+def test_git_status_tool_shows_staged_and_untracked_changes(repo: Path):
+    (repo / "a.txt").write_text("hello")
+    (repo / "b.txt").write_text("world")
+    _git(repo, "add", "a.txt")
+
+    status = git_status(str(repo))
+
+    assert "A  a.txt" in status
+    assert "?? b.txt" in status
+
+
+def test_git_status_tool_raises_value_error_for_invalid_location():
+    with pytest.raises(ValueError, match="does not exist"):
+        git_status("/does/not/exist")
 
 
 def test_notation_reference_lists_risk_levels_and_intentions():
