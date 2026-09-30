@@ -63,6 +63,11 @@ def test_raises_when_nothing_staged(repo: Path):
         commit(location=str(repo), intention="r", risk=".", comment="Nothing to do")
 
 
+def test_no_staged_changes_error_explains_how_to_fix(repo: Path):
+    with pytest.raises(CommitError, match=r"Run `git add` first, or pass `paths`"):
+        commit(location=str(repo), intention="r", risk=".", comment="Nothing to do")
+
+
 def test_raises_for_invalid_location():
     with pytest.raises(CommitError, match="does not exist"):
         commit(location="/does/not/exist", intention="r", risk=".", comment="x")
