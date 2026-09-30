@@ -299,6 +299,22 @@ def test_commit_rejects_paths_escaping_repo_via_dotdot(repo: Path, tmp_path: Pat
         outside.unlink(missing_ok=True)
 
 
+def test_path_escape_error_explains_how_to_fix(repo: Path, tmp_path: Path):
+    outside = tmp_path.parent / f"{tmp_path.name}_outside.txt"
+    outside.write_text("secret")
+    try:
+        with pytest.raises(CommitError, match="must resolve inside the repository"):
+            commit(
+                location=str(repo),
+                intention="r",
+                risk=".",
+                comment="x",
+                paths=[f"../{outside.name}"],
+            )
+    finally:
+        outside.unlink(missing_ok=True)
+
+
 def test_commit_rejects_absolute_paths_outside_repo(repo: Path, tmp_path: Path):
     outside_dir = tmp_path.parent / f"{tmp_path.name}_outside_repo"
     outside_dir.mkdir()
