@@ -121,7 +121,11 @@ def close_theme(location: str, slug: str, target_branch: str) -> CommitResult:
     _run_git(repo_path, ["rev-parse", "--is-inside-work-tree"])
 
     if not _branch_exists(repo_path, slug):
-        raise CommitError(f"No theme branch named {slug!r} found in {repo_path}")
+        raise CommitError(
+            f"No theme branch named {slug!r} found in {repo_path}. Call "
+            f"commit with theme_slug={slug!r} and theme_mode='d_shaped_merge' "
+            "at least once before closing the theme."
+        )
 
     _run_git(repo_path, ["checkout", target_branch])
     _run_git(repo_path, ["merge", "--no-ff", slug, "-m", slug])
