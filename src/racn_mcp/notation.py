@@ -129,7 +129,9 @@ def validate_theme_slug(slug: str) -> str:
     if not THEME_SLUG_PATTERN.fullmatch(slug):
         raise NotationError(
             f"Invalid theme slug {slug!r}. Must be lowercase letters, digits, "
-            "and hyphens, e.g. 'checkout-redesign'"
+            "and hyphens, e.g. 'checkout-redesign' \u2014 it's also used as "
+            "the git branch name in \"d_shaped_merge\" mode, so other "
+            "characters (spaces, underscores, uppercase, etc.) aren't allowed."
         )
     return slug
 
