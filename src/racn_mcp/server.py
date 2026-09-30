@@ -47,9 +47,10 @@ mcp = MCPServer(
         "commit one distinct concern at a time rather than batching several "
         "into one call. Skipping small commits in favor of large ones "
         "produces a less clear commit history. To group several related "
-        "commits under a feature theme, pass a `theme_slug` and `theme_mode` "
-        "to `commit`; for `theme_mode='d_shaped_merge'`, call `close_theme` "
-        "once the theme's commits are done."
+        "commits under a feature theme, pass a `theme_slug` to `commit` "
+        "(`theme_mode` defaults to 'd_shaped_merge' if omitted; pass "
+        "'inline' explicitly for that mode instead); for 'd_shaped_merge', "
+        "call `close_theme` once the theme's commits are done."
     ),
 )
 
@@ -79,9 +80,11 @@ def commit(
     this `paths` parameter is the only staging mechanism this server
     provides.
 
-    Pass `theme_slug` and `theme_mode` together to group this commit with
-    others under a feature theme (a lowercase, hyphenated slug, e.g.
-    "checkout-redesign"):
+    Pass `theme_slug` to group this commit with others under a feature theme
+    (a lowercase, hyphenated slug, e.g. "checkout-redesign"). `theme_mode`
+    defaults to "d_shaped_merge" if omitted; pass "inline" explicitly for
+    that mode instead. Passing `theme_mode` without a `theme_slug` raises,
+    since there's no slug to name the branch or tag the message with:
 
     - `theme_mode="inline"`: the slug is embedded in this commit's message,
       e.g. ". f [checkout-redesign] Add validation".
@@ -97,7 +100,7 @@ def commit(
         risk: How risky the change is, e.g. "proven_safe" or "risky".
         comment: The commit summary text.
         theme_slug: Feature theme slug to group this commit under, if any.
-        theme_mode: How to group commits under `theme_slug`: "inline" or "d_shaped_merge".
+        theme_mode: How to group commits under `theme_slug`; defaults to "d_shaped_merge".
         paths: Paths to stage before committing, if not already staged.
     """
     try:
