@@ -174,7 +174,7 @@ def test_raises_when_theme_mode_given_without_theme_slug(repo: Path):
     (repo / "a.txt").write_text("hello")
     _git(repo, "add", "a.txt")
 
-    with pytest.raises(CommitError, match="theme_slug and theme_mode"):
+    with pytest.raises(CommitError, match="theme_mode was given without a theme_slug"):
         commit(
             location=str(repo),
             intention="r",

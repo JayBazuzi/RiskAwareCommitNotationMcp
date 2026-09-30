@@ -105,13 +105,13 @@ def test_commit_tool_raises_value_error_for_mismatched_theme_args(repo: Path):
     (repo / "a.txt").write_text("hello")
     _git(repo, "add", "a.txt")
 
-    with pytest.raises(ValueError, match="theme_slug and theme_mode"):
+    with pytest.raises(ValueError, match="theme_mode was given without a theme_slug"):
         commit(
             location=str(repo),
             intention="feature",
             risk="proven_safe",
             comment="x",
-            theme_slug="checkout-redesign",
+            theme_mode="inline",
         )
 
 
