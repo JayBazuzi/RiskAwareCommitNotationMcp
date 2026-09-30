@@ -215,6 +215,17 @@ def test_close_theme_raises_when_branch_does_not_exist(repo: Path):
         )
 
 
+def test_no_theme_branch_error_explains_how_to_fix(repo: Path):
+    (repo / "a.txt").write_text("hello")
+    _git(repo, "add", "a.txt")
+    commit(location=str(repo), intention="r", risk=".", comment="Initial commit")
+
+    with pytest.raises(CommitError, match="theme_mode='d_shaped_merge'"):
+        close_theme(
+            location=str(repo), slug="nonexistent-theme", target_branch="master"
+        )
+
+
 def test_close_theme_raises_for_invalid_location():
     with pytest.raises(CommitError, match="does not exist"):
         close_theme(
