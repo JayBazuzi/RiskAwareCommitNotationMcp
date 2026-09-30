@@ -97,8 +97,38 @@ def test_commit_tool_embeds_inline_theme_slug(repo: Path):
         theme_slug="checkout-redesign",
         theme_mode="inline",
     )
-
     assert result.endswith(". f [checkout-redesign] Add validation")
+
+
+def test_commit_tool_theme_slug_alone_defaults_to_d_shaped_merge(repo: Path):
+    (repo / "a.txt").write_text("hello")
+    _git(repo, "add", "a.txt")
+    commit(
+        location=str(repo),
+        intention="refactoring",
+        risk="proven_safe",
+        comment="Initial commit",
+    )
+
+    (repo / "b.txt").write_text("world")
+    _git(repo, "add", "b.txt")
+    result = commit(
+        location=str(repo),
+        intention="feature",
+        risk="proven_safe",
+        comment="Add b.txt",
+        theme_slug="checkout-redesign",
+    )
+
+    assert result.endswith(". f Add b.txt")
+    branch = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    assert branch == "checkout-redesign"
 
 
 def test_commit_tool_raises_value_error_for_mismatched_theme_args(repo: Path):
