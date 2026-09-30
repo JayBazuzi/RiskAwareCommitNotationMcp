@@ -40,19 +40,29 @@ def commit(
     should be committed. Pass `paths` to stage those paths (or everything,
     for an empty list or `["."]`) atomically as part of this call instead.
 
-    `theme_slug` and `theme_mode` must be given together (or not at all) to
-    group this commit under a feature theme. In "inline" mode the slug is
-    embedded in this commit's message. In "d_shaped_merge" mode this commit
-    is made on a branch named after the slug (created from the current HEAD
-    if it doesn't already exist) instead of the current branch; use
-    `close_theme` afterwards to merge that branch back.
+    `theme_slug` groups this commit under a feature theme. `theme_mode`
+    defaults to "d_shaped_merge" if omitted; pass "inline" explicitly for
+    that mode instead. Passing `theme_mode` without a `theme_slug` raises,
+    since there's no slug to name the branch or tag the message with. In
+    "inline" mode the slug is embedded in this commit's message. In
+    "d_shaped_merge" mode this commit is made on a branch named after the
+    slug (created from the current HEAD if it doesn't already exist)
+    instead of the current branch; use `close_theme` afterwards to merge
+    that branch back.
     """
     repo_path = Path(location)
     if not repo_path.is_dir():
         raise CommitError(f"Location does not exist or is not a directory: {location}")
 
-    if (theme_slug is None) != (theme_mode is None):
-        raise CommitError("theme_slug and theme_mode must be given together")
+    if theme_mode is not None and theme_slug is None:
+        raise CommitError(
+            "theme_mode was given without a theme_slug. theme_mode has no "
+            "effect without a theme_slug to identify the theme's branch "
+            "(\"d_shaped_merge\") or tag (\"inline\"); pass theme_slug, or "
+            "omit theme_mode to commit without a theme."
+        )
+    if theme_slug is not None and theme_mode is None:
+        theme_mode = "d_shaped_merge"
     if theme_mode is not None and theme_mode not in THEME_MODES:
         raise CommitError(
             f"Invalid theme mode {theme_mode!r}. Must be one of: {', '.join(THEME_MODES)}"
