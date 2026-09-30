@@ -85,7 +85,11 @@ def commit(
 
     staged = _run_git(repo_path, ["diff", "--cached", "--name-only"]).stdout.strip()
     if not staged:
-        raise CommitError("No staged changes to commit in " + str(repo_path))
+        raise CommitError(
+            f"No staged changes to commit in {repo_path}. Run `git add` "
+            "first, or pass `paths` to this call to stage them "
+            "atomically before committing."
+        )
 
     if theme_mode == "d_shaped_merge":
         assert theme_slug is not None
