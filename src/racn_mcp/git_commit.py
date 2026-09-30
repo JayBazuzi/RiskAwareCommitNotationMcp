@@ -163,7 +163,12 @@ def _validate_paths(repo_path: Path, paths: list[str]) -> list[str]:
             candidate = repo_path / candidate
         resolved = candidate.resolve()
         if resolved != repo_root and repo_root not in resolved.parents:
-            raise CommitError(f"Path {path!r} escapes repository root {repo_root}")
+            raise CommitError(
+                f"Path {path!r} escapes repository root {repo_root}. Paths "
+                "must resolve inside the repository; remove '..' segments, "
+                "don't pass an absolute path outside it, and avoid symlinks "
+                "pointing outside it."
+            )
     return paths
 
 
