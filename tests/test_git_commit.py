@@ -151,18 +151,23 @@ def test_d_shaped_merge_theme_commits_to_branch_named_after_slug(repo: Path):
     assert len(parents) == 3  # commit hash + 2 parents
 
 
-def test_raises_when_theme_slug_given_without_theme_mode(repo: Path):
+def test_theme_slug_alone_defaults_theme_mode_to_d_shaped_merge(repo: Path):
     (repo / "a.txt").write_text("hello")
     _git(repo, "add", "a.txt")
+    commit(location=str(repo), intention="r", risk=".", comment="Initial commit")
 
-    with pytest.raises(CommitError, match="theme_slug and theme_mode"):
-        commit(
-            location=str(repo),
-            intention="r",
-            risk=".",
-            comment="x",
-            theme_slug="checkout-redesign",
-        )
+    (repo / "b.txt").write_text("world")
+    _git(repo, "add", "b.txt")
+    result = commit(
+        location=str(repo),
+        intention="f",
+        risk=".",
+        comment="Add b.txt",
+        theme_slug="checkout-redesign",
+    )
+
+    assert result.message == ". f Add b.txt"
+    assert _current_branch(repo) == "checkout-redesign"
 
 
 def test_raises_when_theme_mode_given_without_theme_slug(repo: Path):
