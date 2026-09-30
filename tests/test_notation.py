@@ -112,3 +112,8 @@ def test_validate_theme_slug_accepts_valid_slugs(slug):
 def test_validate_theme_slug_rejects_invalid_slugs(slug):
     with pytest.raises(NotationError, match="Invalid theme slug"):
         validate_theme_slug(slug)
+
+
+def test_invalid_theme_slug_error_explains_why():
+    with pytest.raises(NotationError, match="used as the git branch name"):
+        validate_theme_slug("Not A Slug")
