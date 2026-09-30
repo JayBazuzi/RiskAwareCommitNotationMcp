@@ -43,8 +43,8 @@ descriptions, and input/output schemas) is captured in
 | `risk`       | One of `proven_safe`, `validated`, `risky`, `probably_broken`.                |
 | `intention`  | A core intention (`feature`, `bugfix`, `refactoring`, `documentation`) or an Extension Intention (`environment`, `test_only`, `merge`, `auto`, `comment`, `content`, `process`, `spec`, `nop`), each with a `_user_visible` variant (e.g. `feature_user_visible`) for a behavior-changing / user-visible change. |
 | `comment`    | The commit summary text.                                                      |
-| `theme_slug` | Optional feature theme slug (lowercase, hyphenated, e.g. `checkout-redesign`) grouping this commit with others. Must be given together with `theme_mode`. |
-| `theme_mode` | Optional; either `inline` or `d_shaped_merge`. Required together with `theme_slug`. |
+| `theme_slug` | Optional feature theme slug (lowercase, hyphenated, e.g. `checkout-redesign`) grouping this commit with others. |
+| `theme_mode` | Optional; either `inline` or `d_shaped_merge`. Defaults to `d_shaped_merge` if `theme_slug` is given without it. Passing `theme_mode` without a `theme_slug` is an error, since there's no slug to name the branch or tag the message with. |
 | `paths`      | Optional list of paths (relative to `location`) to stage before committing. An empty list or `["."]` stages everything. Paths must resolve inside `location`; anything escaping it via `..`, an absolute path, or a symlink is rejected. |
 
 `risk` and `intention` are named values rather than the raw RACN symbols so
@@ -57,8 +57,9 @@ docs for the underlying notation.
 
 ### Grouping commits under a feature theme
 
-Pass `theme_slug` and `theme_mode` to `commit` to mark several commits as
-belonging to the same feature theme:
+Pass `theme_slug` to `commit` to mark several commits as belonging to the
+same feature theme. `theme_mode` defaults to `d_shaped_merge` if omitted;
+pass `inline` explicitly for the other mode:
 
 - **`inline`** — the slug is embedded in each commit's message, e.g.
   `. f [checkout-redesign] Add validation`. Commits stay on the current
