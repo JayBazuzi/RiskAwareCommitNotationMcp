@@ -130,7 +130,7 @@ def validate_theme_slug(slug: str) -> str:
         raise NotationError(
             f"Invalid theme slug {slug!r}. Must be lowercase letters, digits, "
             "and hyphens, e.g. 'checkout-redesign' \u2014 it's also used as "
-            "the git branch name in \"d_shaped_merge\" mode, so other "
+            'the git branch name in "d_shaped_merge" mode, so other '
             "characters (spaces, underscores, uppercase, etc.) aren't allowed."
         )
     return slug

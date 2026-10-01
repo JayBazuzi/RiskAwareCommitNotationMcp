@@ -58,7 +58,7 @@ def commit(
         raise CommitError(
             "theme_mode was given without a theme_slug. theme_mode has no "
             "effect without a theme_slug to identify the theme's branch "
-            "(\"d_shaped_merge\") or tag (\"inline\"); pass theme_slug, or "
+            '("d_shaped_merge") or tag ("inline"); pass theme_slug, or '
             "omit theme_mode to commit without a theme."
         )
     if theme_slug is not None and theme_mode is None:
