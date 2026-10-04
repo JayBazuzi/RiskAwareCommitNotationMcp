@@ -375,3 +375,16 @@ def test_commit_with_paths_stages_deletion_of_tracked_file(repo: Path):
     commit(location=str(repo), intention="r", risk=".", comment="Remove a.txt", paths=["a.txt"])
 
     assert git_status(str(repo)) == ""
+
+
+def test_commit_rejects_path_that_does_not_exist(repo: Path):
+    (repo / "test_tictactoe.py").write_text("hello")
+
+    with pytest.raises(CommitError, match="Path 'tictactoe.py' does not exist"):
+        commit(
+            location=str(repo),
+            intention="r",
+            risk=".",
+            comment="x",
+            paths=["test_tictactoe.py", "tictactoe.py"],
+        )
