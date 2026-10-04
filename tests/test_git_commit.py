@@ -365,3 +365,13 @@ def test_git_status_shows_untracked_and_staged_changes(repo: Path):
 def test_git_status_raises_for_invalid_location():
     with pytest.raises(CommitError, match="does not exist"):
         git_status("/does/not/exist")
+
+
+def test_commit_with_paths_stages_deletion_of_tracked_file(repo: Path):
+    (repo / "a.txt").write_text("hello")
+    commit(location=str(repo), intention="r", risk=".", comment="Add a.txt", paths=["a.txt"])
+    (repo / "a.txt").unlink()
+
+    commit(location=str(repo), intention="r", risk=".", comment="Remove a.txt", paths=["a.txt"])
+
+    assert git_status(str(repo)) == ""
