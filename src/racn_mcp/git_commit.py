@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -155,7 +156,7 @@ def _stage(repo_path: Path, paths: list[str]) -> None:
 
 
 def _validate_paths(repo_path: Path, paths: list[str]) -> list[str]:
-    """Reject paths that escape `repo_path` via `..`, absolute paths, or symlinks."""
+    """Reject paths that escape `repo_path` via `..`, absolute paths, or symlinks, or don't exist."""
     repo_root = repo_path.resolve()
     for path in paths:
         candidate = Path(path)
@@ -169,7 +170,23 @@ def _validate_paths(repo_path: Path, paths: list[str]) -> list[str]:
                 "don't pass an absolute path outside it, and avoid symlinks "
                 "pointing outside it."
             )
+        if not os.path.lexists(candidate) and not _is_tracked(repo_path, path):
+            raise CommitError(
+                f"Path {path!r} does not exist in {repo_root} and isn't "
+                "tracked by git, so there's nothing to stage. Check the "
+                "spelling, or call git_status to see which paths have changes."
+            )
     return paths
+
+
+def _is_tracked(repo_path: Path, path: str) -> bool:
+    result = subprocess.run(
+        ["git", "ls-files", "--error-unmatch", "--", path],
+        cwd=repo_path,
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
 
 
 def _branch_exists(repo_path: Path, branch: str) -> bool:
