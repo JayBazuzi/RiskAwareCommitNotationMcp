@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 from racn_mcp.git_commit import CommitError
 from racn_mcp.git_commit import close_theme as do_close_theme
@@ -116,7 +117,7 @@ def commit(
             paths=paths,
         )
     except (NotationError, CommitError) as e:
-        raise ValueError(str(e)) from e
+        raise ToolError(str(e)) from e
 
     return f"Committed {result.commit_hash[:12]}: {result.message}"
 
@@ -140,7 +141,7 @@ def close_theme(location: str, slug: str, target_branch: str) -> str:
             location=location, slug=slug, target_branch=target_branch
         )
     except (NotationError, CommitError) as e:
-        raise ValueError(str(e)) from e
+        raise ToolError(str(e)) from e
 
     return f"Merged theme {slug!r} into {target_branch} as {result.commit_hash[:12]}"
 
@@ -159,7 +160,7 @@ def git_status(location: str) -> str:
     try:
         return do_git_status(location)
     except CommitError as e:
-        raise ValueError(str(e)) from e
+        raise ToolError(str(e)) from e
 
 
 @mcp.tool()

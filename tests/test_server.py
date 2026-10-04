@@ -3,6 +3,7 @@ from pathlib import Path
 
 import anyio
 import pytest
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import CallToolRequestParams
 
 from racn_mcp.server import close_theme, commit, git_status, mcp, notation_reference
@@ -43,16 +44,16 @@ def test_commit_tool_commits_staged_changes(repo: Path):
     assert log.stdout.strip() == ". r Add a.txt"
 
 
-def test_commit_tool_raises_value_error_for_invalid_risk(repo: Path):
+def test_commit_tool_raises_tool_error_for_invalid_risk(repo: Path):
     (repo / "a.txt").write_text("hello")
     _git(repo, "add", "a.txt")
 
-    with pytest.raises(ValueError, match="Invalid risk"):
+    with pytest.raises(ToolError, match="Invalid risk"):
         commit(location=str(repo), intention="refactoring", risk="unknown", comment="x")
 
 
-def test_commit_tool_raises_value_error_when_nothing_staged(repo: Path):
-    with pytest.raises(ValueError, match="No staged changes"):
+def test_commit_tool_raises_tool_error_when_nothing_staged(repo: Path):
+    with pytest.raises(ToolError, match="No staged changes"):
         commit(
             location=str(repo), intention="refactoring", risk="proven_safe", comment="x"
         )
@@ -93,10 +94,10 @@ def test_commit_tool_stages_given_paths(repo: Path):
     assert "?? b.txt" in git_status(str(repo))
 
 
-def test_commit_tool_raises_value_error_for_path_escaping_repo(repo: Path):
+def test_commit_tool_raises_tool_error_for_path_escaping_repo(repo: Path):
     (repo / "a.txt").write_text("hello")
 
-    with pytest.raises(ValueError, match="escapes repository root"):
+    with pytest.raises(ToolError, match="escapes repository root"):
         commit(
             location=str(repo),
             intention="refactoring",
@@ -152,11 +153,11 @@ def test_commit_tool_theme_slug_alone_defaults_to_d_shaped_merge(repo: Path):
     assert branch == "checkout-redesign"
 
 
-def test_commit_tool_raises_value_error_for_mismatched_theme_args(repo: Path):
+def test_commit_tool_raises_tool_error_for_mismatched_theme_args(repo: Path):
     (repo / "a.txt").write_text("hello")
     _git(repo, "add", "a.txt")
 
-    with pytest.raises(ValueError, match="theme_mode was given without a theme_slug"):
+    with pytest.raises(ToolError, match="theme_mode was given without a theme_slug"):
         commit(
             location=str(repo),
             intention="feature",
@@ -209,7 +210,7 @@ def test_close_theme_tool_merges_theme_branch(repo: Path):
     assert log.stdout.strip() == "checkout-redesign"
 
 
-def test_close_theme_tool_raises_value_error_when_branch_missing(repo: Path):
+def test_close_theme_tool_raises_tool_error_when_branch_missing(repo: Path):
     (repo / "a.txt").write_text("hello")
     _git(repo, "add", "a.txt")
     commit(
@@ -219,7 +220,7 @@ def test_close_theme_tool_raises_value_error_when_branch_missing(repo: Path):
         comment="Initial commit",
     )
 
-    with pytest.raises(ValueError, match="No theme branch"):
+    with pytest.raises(ToolError, match="No theme branch"):
         close_theme(
             location=str(repo), slug="nonexistent-theme", target_branch="master"
         )
@@ -236,8 +237,8 @@ def test_git_status_tool_shows_staged_and_untracked_changes(repo: Path):
     assert "?? b.txt" in status
 
 
-def test_git_status_tool_raises_value_error_for_invalid_location():
-    with pytest.raises(ValueError, match="does not exist"):
+def test_git_status_tool_raises_tool_error_for_invalid_location():
+    with pytest.raises(ToolError, match="does not exist"):
         git_status("/does/not/exist")
 
 
