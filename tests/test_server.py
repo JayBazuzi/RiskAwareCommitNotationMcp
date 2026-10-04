@@ -1,7 +1,9 @@
 import subprocess
 from pathlib import Path
 
+import anyio
 import pytest
+from mcp.types import CallToolRequestParams
 
 from racn_mcp.server import close_theme, commit, git_status, mcp, notation_reference
 
@@ -54,6 +56,25 @@ def test_commit_tool_raises_value_error_when_nothing_staged(repo: Path):
         commit(
             location=str(repo), intention="refactoring", risk="proven_safe", comment="x"
         )
+
+
+def test_commit_tool_error_message_reaches_mcp_client(repo: Path):
+    result = anyio.run(
+        mcp._handle_call_tool,
+        None,
+        CallToolRequestParams(
+            name="commit",
+            arguments={
+                "location": str(repo),
+                "intention": "refactoring",
+                "risk": "proven_safe",
+                "comment": "x",
+            },
+        ),
+    )
+
+    assert result.is_error
+    assert "No staged changes" in result.content[0].text
 
 
 def test_commit_tool_stages_given_paths(repo: Path):
