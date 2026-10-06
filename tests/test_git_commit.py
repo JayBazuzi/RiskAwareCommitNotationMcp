@@ -369,10 +369,22 @@ def test_git_status_raises_for_invalid_location():
 
 def test_commit_with_paths_stages_deletion_of_tracked_file(repo: Path):
     (repo / "a.txt").write_text("hello")
-    commit(location=str(repo), intention="r", risk=".", comment="Add a.txt", paths=["a.txt"])
+    commit(
+        location=str(repo),
+        intention="r",
+        risk=".",
+        comment="Add a.txt",
+        paths=["a.txt"],
+    )
     (repo / "a.txt").unlink()
 
-    commit(location=str(repo), intention="r", risk=".", comment="Remove a.txt", paths=["a.txt"])
+    commit(
+        location=str(repo),
+        intention="r",
+        risk=".",
+        comment="Remove a.txt",
+        paths=["a.txt"],
+    )
 
     assert git_status(str(repo)) == ""
 
